@@ -1,5 +1,5 @@
 node_modules/
 .idea/
 
-./.env
-./commands.js
+.env
+commands.js
