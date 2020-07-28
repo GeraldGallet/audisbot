@@ -23,10 +23,14 @@ class ClientController {
         this.vocalController = new VocalController(this.commands[2], this.vocalEmitter, this.config.basePath);
     }
 
+    /**
+     * Initializing the bot and tart listening to events
+     */
     init() {
         this.client.login(this.config.token).then(() => {
             this.client.user.setActivity(`Try ${this.config.prefix}list`);
         });
+
         this.client.on('ready', () => {
             log.info(`Logged in as ${this.client.user.tag}!`);
             this.ready = true;
@@ -51,7 +55,7 @@ class ClientController {
 
                     case 'voice':
                         log.debug(`${splitMessage[0]} is a voice command`);
-                        this.vocalController.compute(msg, splitMessage);
+                        this.vocalController.command(msg, splitMessage);
                         break;
 
                     case 'unknown':
@@ -84,6 +88,11 @@ class ClientController {
         this.vocalController.init();
     }
 
+    /**
+     * Get the category of the received command
+     * @param command
+     * @returns {'global'|'vocal'|'text'|'unknown'}
+     */
     getTypeOfCommand(command) {
         for (let i = 0; i < this.commands.length; i += 1) {
             for (let j = 0; j < this.commands[i].commands.length; j += 1) {
@@ -96,16 +105,27 @@ class ClientController {
         return 'unknown';
     }
 
+    /**
+     * Get the help of the wanted command
+     * @param command
+     * @returns {null|*}
+     */
     getHelp(command) {
         for (let i = 0; i < this.commands[0].commands.length; i += 1) {
             if (this.commands[0].commands[i].command === command) {
-                return this.commands[0].commands[i].help ? this.commands[0].commands[i].help : 'There is no help for this command :( try adding one with describe command !';
+                return this.commands[0].commands[i].help ? this.commands[0].commands[i].help : 'There is no help for this command :(';
             }
         }
 
         return null;
     }
 
+    /**
+     * Compute a global command
+     * @param message
+     * @param messageObject
+     * @returns {string|number|null}
+     */
     computeGlobalCommand(message, messageObject=null) {
         if (message[1] === 'help') {
             return `=== ${message[0]}'s help ===\n` + this.getHelp(message[0]);
@@ -145,8 +165,12 @@ class ClientController {
             case 'addvocal':
                 log.debug('Adding a new vocal command');
                 res = this.vocalController.addCommand(message);
-                this.saveCommands();
-                return res;
+                if (res === 0) {
+                    this.saveCommands();
+                    return `Command successfully added, try it with ${this.config.prefix}${message[1]}`;
+                } else {
+                    return res;
+                }
 
             case 'config':
                 log.debug('Showing configuration');
@@ -167,6 +191,11 @@ class ClientController {
         }
     }
 
+    /**
+     * Change of configuration by the user
+     * @param message
+     * @returns {string}
+     */
     toggleConfig(message) {
         switch (message[1]) {
             case 'welcome':
@@ -178,6 +207,10 @@ class ClientController {
         }
     }
 
+    /**
+     * Get the list of global commands
+     * @returns {string}
+     */
     list() {
         let message = '=== Global commands ===\n';
         message += `(${this.commands[0].description})\n`;
@@ -194,6 +227,10 @@ class ClientController {
         return message;
     }
 
+    /**
+     * Get the list of mp3 files
+     * @returns {string}
+     */
     listFiles() {
         let message = '=== Audio files ===\n';
         const files = fs.readdirSync(this.vocalController.basePath);
@@ -204,6 +241,10 @@ class ClientController {
         return message;
     }
 
+    /**
+     * Get the list of configurable variables and their states
+     * @returns {string}
+     */
     listConfig() {
         let message = '=== My current configuration ===\n';
 
@@ -212,6 +253,9 @@ class ClientController {
         return message;
     }
 
+    /**
+     * Save commands to the commands.js file
+     */
     saveCommands() {
         const newCommands = this.commands;
         newCommands[1] = this.textController.rules;

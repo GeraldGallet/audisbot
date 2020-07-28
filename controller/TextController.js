@@ -3,6 +3,10 @@ class TextController {
         this.rules = rules;
     }
 
+    /**
+     * List all text commands + options
+     * @returns {string}
+     */
     list() {
         let message = '=== Text commands ===\n';
         message += `(${this.rules.description})\n`;
